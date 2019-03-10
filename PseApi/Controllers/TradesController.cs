@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -20,19 +19,26 @@ namespace PseApi.Controllers
     {
         private readonly PseContext _context;
         private readonly TradeService _tradeService;
+        private readonly StockService _stockService;
         private readonly ILogger<TradesController> _logger;
 
-        public TradesController(PseContext context, TradeService tradeService, ILogger<TradesController> logger)
+        public TradesController(PseContext context, TradeService tradeService, ILogger<TradesController> logger, StockService stockService)
         {
             _context = context;
             _tradeService = tradeService;
             _logger = logger;
+            _stockService = stockService;
         }
 
         // GET api/values
         [HttpGet("day/{day}")]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTradesForDay([FromRoute] DateTime day)
         {
+            if (!await _tradeService.IsValidDate(day))
+            {
+                return NotFound();
+            }
+
             IEnumerable<Trade> result = await _tradeService.GetTradesForDay(day);
 
             return Ok(result);
@@ -42,6 +48,13 @@ namespace PseApi.Controllers
         [HttpGet("{stock}")]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTrades([FromRoute] string stock)
         {
+            Stock stockObject = await _stockService.GetStockByBicAsync(stock);
+
+            if (stockObject == null)
+            {
+                return NotFound($"Stock with BIC {stock} was not found");
+            }
+
             IEnumerable<Trade> result = await _context.Trades
                 .AsNoTracking()
                 .Where(row => row.BIC == stock)
@@ -54,6 +67,13 @@ namespace PseApi.Controllers
         [HttpGet("isin/{isin}")]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTradesByIsin([FromRoute] string isin)
         {
+            Stock stockObject = await _stockService.GetStockByIsinAsync(isin);
+
+            if (stockObject == null)
+            {
+                return NotFound($"Stock with ISIN {isin} was not found");
+            }
+
             IEnumerable<Trade> result = await _context.Trades
                 .AsNoTracking()
                 .Where(row => row.ISIN == isin)
@@ -98,41 +118,6 @@ namespace PseApi.Controllers
                 .ToListAsync();
 
             return Ok(result);
-        }
-
-        [HttpGet("compute")]
-        public async Task<ActionResult> ComputeEverything()
-        {
-            DateTime starting = DateTime.Now;
-            DateTime final = new DateTime(2013, 1, 1);
-            int currentStep = 0;
-            int stepsBeforeSleep = 10;
-
-            for (DateTime date = starting; date >= final; date = date.AddDays(-1))
-            {
-                if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    await this.GetTradesForDay(date);
-                    currentStep++;
-
-                    if (currentStep % stepsBeforeSleep == 0)
-                    {
-                        // Thread.Sleep(3 * 1000);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError("Error processing date: {Date}", date.ToShortDateString());
-                    _logger.LogError(e, e.Message);
-                }
-            }
-
-            return Ok();
         }
     }
 }
