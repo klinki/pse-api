@@ -22,6 +22,16 @@ namespace PseApi.Services
             _logger = logger;
         }
 
+        public async Task<bool> IsValidDate(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday || date > DateTime.Now)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public async Task<IEnumerable<Trade>> GetTradesForDay(DateTime day)
         {
             Dataset dataset = await _context.Datasets.AsNoTracking().SingleOrDefaultAsync(row => row.Day == day);
@@ -29,11 +39,17 @@ namespace PseApi.Services
 
             if (dataset == null)
             {
+                _logger.LogInformation("Data for date: {Date} not downloaded yet, downloading...", day);
+
                 IEnumerable<PragueStockExchangeCsvRow> csvData = await _pseClient.GetData(day);
 
-                if (csvData.Where(csvTrade => csvTrade == null).Count() > 0)
+                _logger.LogInformation("Downloaded: {Count} records", csvData.Count());
+
+                int countNullValues = csvData.Where(csvTrade => csvTrade == null).Count();
+
+                if (countNullValues > 0)
                 {
-                    _logger.LogError("Data null for date: {Date}", day);
+                    _logger.LogWarning("Dataset contains {Count} null values", countNullValues);
                 }
 
                 trades = csvData.Where(csvTrade => csvTrade != null).Select(csvTrade => new Trade
@@ -75,6 +91,7 @@ namespace PseApi.Services
                     }
                     catch (Exception e)
                     {
+                        _logger.LogError(e, "Exception thrown when saving data to database");
                         transaction.Rollback();
                         throw;
                     }
