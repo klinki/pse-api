@@ -11,8 +11,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PseApi.Configuration;
 using PseApi.Data;
-using PseApi.Services;
+using Serilog;
 
 namespace PseApi
 {
@@ -21,6 +22,7 @@ namespace PseApi
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
         }
 
         public IConfiguration Configuration { get; }
@@ -31,13 +33,19 @@ namespace PseApi
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             services.AddDbContext<PseContext>();
-            // options =>
-            //    options.UseMySql(Configuration.GetConnectionString("MySQLContext")));
-            services.AddCors();
 
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder => 
+                {
+                    builder.AllowAnyOrigin()
+                        .WithMethods("GET");
+                });
+            });
 
-            services.AddScoped<TradeService>();
-            services.AddScoped<FinSharp.PragueStockExchange.PragueStockExchangeApiClient>();
+            services.AddHealthChecks().AddMySql(Configuration.GetConnectionString("Default"));
+
+            services.ConfigureDI(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
