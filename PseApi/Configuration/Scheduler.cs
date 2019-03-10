@@ -65,7 +65,7 @@ namespace PseApi.Configuration
                 TriggerBuilder.Create()
                     .WithDailyTimeIntervalSchedule(interval => interval
                         .OnMondayThroughFriday()
-                        .StartingDailyAt(new TimeOfDay(01, 00))
+                        .StartingDailyAt(new TimeOfDay(23, 50))
                     )
                     .StartNow()
             );
