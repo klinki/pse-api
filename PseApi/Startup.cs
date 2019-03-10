@@ -46,10 +46,11 @@ namespace PseApi
             services.AddHealthChecks().AddMySql(Configuration.GetConnectionString("Default"));
 
             services.ConfigureDI(Configuration);
+            services.AddQuartz();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime lifetime)
         {
             if (env.IsDevelopment())
             {
@@ -65,6 +66,8 @@ namespace PseApi
 
             app.UseHttpsRedirection();
             app.UseMvc();
+
+            app.UseScheduler(lifetime);
         }
     }
 }
