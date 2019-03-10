@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PseApi.Controllers.Dto;
 using PseApi.Data;
 using PseApi.Queries;
 using PseApi.Services;
@@ -36,7 +37,7 @@ namespace PseApi.Controllers
         {
             if (!await _tradeService.IsValidDate(day))
             {
-                return NotFound();
+                return BadRequest(new ErrorDto($"Invalid date {day}"));
             }
 
             IEnumerable<Trade> result = await _tradeService.GetTradesForDay(day);
@@ -46,17 +47,18 @@ namespace PseApi.Controllers
 
         // GET api/values
         [HttpGet("{stock}")]
-        public async Task<ActionResult<IEnumerable<Trade>>> GetTrades([FromRoute] string stock)
+        public async Task<ActionResult<IEnumerable<Trade>>> GetTrades([FromRoute] string stock, [FromQuery] TradeQuery queryParams)
         {
             Stock stockObject = await _stockService.GetStockByBicAsync(stock);
 
             if (stockObject == null)
             {
-                return NotFound($"Stock with BIC {stock} was not found");
+                return NotFound(new ErrorDto($"Stock with BIC {stock} was not found"));
             }
 
-            IEnumerable<Trade> result = await _context.Trades
-                .AsNoTracking()
+            IQueryable<Trade> tradeQuery = BuildQuery(queryParams);
+
+            IEnumerable<Trade> result = await tradeQuery
                 .Where(row => row.BIC == stock)
                 .ToListAsync();
 
@@ -65,17 +67,18 @@ namespace PseApi.Controllers
 
         // GET api/values
         [HttpGet("isin/{isin}")]
-        public async Task<ActionResult<IEnumerable<Trade>>> GetTradesByIsin([FromRoute] string isin)
+        public async Task<ActionResult<IEnumerable<Trade>>> GetTradesByIsin([FromRoute] string isin, [FromQuery] TradeQuery queryParams)
         {
             Stock stockObject = await _stockService.GetStockByIsinAsync(isin);
 
             if (stockObject == null)
             {
-                return NotFound($"Stock with ISIN {isin} was not found");
+                return NotFound(new ErrorDto($"Stock with ISIN {isin} was not found"));
             }
 
-            IEnumerable<Trade> result = await _context.Trades
-                .AsNoTracking()
+            IQueryable<Trade> tradeQuery = BuildQuery(queryParams);
+
+            IEnumerable<Trade> result = await tradeQuery
                 .Where(row => row.ISIN == isin)
                 .ToListAsync();
 
@@ -85,6 +88,17 @@ namespace PseApi.Controllers
         // GET api/values
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTradesByQuery([FromQuery] TradeQuery queryParams)
+        {
+            IQueryable<Trade> tradeQuery = BuildQuery(queryParams);
+
+            IEnumerable<Trade> result = await tradeQuery
+                .OrderBy(row => row.Date)
+                .ToListAsync();
+
+            return Ok(result);
+        }
+
+        protected IQueryable<Trade> BuildQuery(TradeQuery queryParams)
         {
             IQueryable<Trade> tradeQuery = _context.Trades.AsNoTracking();
 
@@ -113,11 +127,7 @@ namespace PseApi.Controllers
                 tradeQuery = tradeQuery.Take(queryParams.Limit.Value);
             }
 
-            IEnumerable<Trade> result = await tradeQuery
-                .OrderBy(row => row.Date)
-                .ToListAsync();
-
-            return Ok(result);
+            return tradeQuery;
         }
     }
 }
