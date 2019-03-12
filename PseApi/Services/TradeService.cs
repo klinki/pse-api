@@ -34,6 +34,8 @@ namespace PseApi.Services
 
         public async Task<IEnumerable<Trade>> GetTradesForDay(DateTime day)
         {
+            day = new DateTime(day.Year, day.Month, day.Day);
+
             Dataset dataset = await _context.Datasets.AsNoTracking().SingleOrDefaultAsync(row => row.Day == day);
             IEnumerable<Trade> trades;
 

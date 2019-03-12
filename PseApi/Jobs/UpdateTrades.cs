@@ -26,9 +26,9 @@ namespace PseApi.Jobs
         {
             _logger.LogInformation("Started {Name} execution", nameof(UpdateTrades));
 
-            if (await _tradeService.IsValidDate(DateTime.Now))
+            if (await _tradeService.IsValidDate(DateTime.Today))
             {
-                await _tradeService.GetTradesForDay(DateTime.Now);
+                await _tradeService.GetTradesForDay(DateTime.Today);
             }
 
             _logger.LogInformation("Finished {Name} execution", nameof(UpdateTrades));
