@@ -20,6 +20,7 @@ namespace PseApi.Configuration
             services.AddScoped<TradeService>();
             services.AddScoped<StockService>();
             services.AddScoped<FinSharp.PragueStockExchange.PragueStockExchangeApiClient>();
+            services.AddTransient<AppInfoService>();
 
             return services;
         }
