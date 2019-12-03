@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using PseApi.Jobs;
 using PseApi.Scheduler;
 using PseApi.Scheduler.Quartz;
@@ -51,7 +52,7 @@ namespace PseApi.Configuration
             services.AddSingleton<TJob>();
         }
 
-        public static void UseScheduler(this IApplicationBuilder app, IApplicationLifetime lifetime)
+        public static void UseScheduler(this IApplicationBuilder app, IHostApplicationLifetime lifetime)
         {
             QuartzLogger logger = app.ApplicationServices.GetService<QuartzLogger>();
             LogProvider.SetCurrentLogProvider(logger);

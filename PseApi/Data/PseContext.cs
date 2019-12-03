@@ -5,8 +5,6 @@ namespace PseApi.Data
 {
     public class PseContext : DbContext
     {
-        public IConfiguration Configuration { get; }
-
         public virtual DbSet<Dataset> Datasets { get; set; }
         public virtual DbSet<Trade> Trades { get; set; }
         public virtual DbSet<Stock> Stocks { get; set; }
@@ -15,20 +13,13 @@ namespace PseApi.Data
         {
         }
 
-        public PseContext(DbContextOptions<PseContext> options, IConfiguration configuration)
+        public PseContext(DbContextOptions<PseContext> options)
             : base(options)
         {
-            Configuration = configuration;
         }
-
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                string connectionString = Configuration.GetConnectionString("Default");
-                optionsBuilder.UseMySql(connectionString, mysqlOptions => { });
-            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -17,9 +17,9 @@ namespace PseApi.Services
             _logger = logger;
         }
 
-        public Task<Stock> GetStockByIdAsync(long id)
+        public async Task<Stock> GetStockByIdAsync(long id)
         {
-            return _context.Stocks.FindAsync(id);
+            return await _context.Stocks.FindAsync(id);
         }
 
         public Task<Stock> GetStockByBicAsync(string bic)

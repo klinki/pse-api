@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PseApi.Configuration;
@@ -30,9 +31,12 @@ namespace PseApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddControllers()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
-            services.AddDbContext<PseContext>();
+            var connectionString = Configuration.GetConnectionString("Default");
+
+            services.AddDbContext<PseContext>(options => options.UseMySql(connectionString));
 
             services.AddCors(options =>
             {
@@ -43,14 +47,14 @@ namespace PseApi
                 });
             });
 
-            services.AddHealthChecks().AddMySql(Configuration.GetConnectionString("Default"));
+            services.AddHealthChecks().AddMySql(connectionString);
 
             services.ConfigureDI(Configuration);
             services.AddQuartz();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime lifetime)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime lifetime)
         {
             if (env.IsDevelopment())
             {
@@ -62,10 +66,14 @@ namespace PseApi
                 app.UseHsts();
             }
 
+            app.UseRouting();
             app.UseCors();
 
             app.UseHttpsRedirection();
-            app.UseMvc();
+            app.UseEndpoints(endpoints => 
+            {
+                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+            });
 
             app.UseScheduler(lifetime);
         }
