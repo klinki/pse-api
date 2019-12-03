@@ -3,6 +3,12 @@ sevices:
   - docker
 
 before_install:
+    - openssl aes-256-cbc -K $encrypted_699ce602e140_key -iv $encrypted_699ce602e140_iv
+        -in deploy_key.enc -out deploy_key -d
+    - chmod 600 ./deploy_key
+    - echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - ssh-add ./deploy_key
+    
     - TAG=$(git tag --contains $TRAVIS_COMMIT)
     - SHORT_COMMIT=$(git rev-parse --short $TRAVIS_COMMIT)
     - VERSION=${TAG:-$SHORT_COMMIT}
@@ -13,5 +19,5 @@ before_install:
     - docker push registry.gitlab.com/klinki/docker-registry/pse:${VERSION}
 
 after_success:
-    - cat ./deploy.sh | ssh ${DEPLOY_USER}@${DEPLOY_SERVER}
+    - cat ./deploy.sh | ssh -i ./deploy_key ${DEPLOY_USER}@${DEPLOY_SERVER}
     - echo "Deploy finished"
