@@ -6,8 +6,9 @@ before_install:
     - openssl aes-256-cbc -K $encrypted_699ce602e140_key -iv $encrypted_699ce602e140_iv
         -in deploy_key.enc -out deploy_key -d
     - chmod 600 ./deploy_key
+    - echo -e "Host cloud.inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    
+
     - TAG=$(git tag --contains $TRAVIS_COMMIT)
     - SHORT_COMMIT=$(git rev-parse --short $TRAVIS_COMMIT)
     - VERSION=${TAG:-$SHORT_COMMIT}
