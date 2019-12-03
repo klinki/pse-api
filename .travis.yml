@@ -7,7 +7,6 @@ before_install:
         -in deploy_key.enc -out deploy_key -d
     - chmod 600 ./deploy_key
     - echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    - ssh-add ./deploy_key
     
     - TAG=$(git tag --contains $TRAVIS_COMMIT)
     - SHORT_COMMIT=$(git rev-parse --short $TRAVIS_COMMIT)
