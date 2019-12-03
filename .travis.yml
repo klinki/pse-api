@@ -12,6 +12,6 @@ before_install:
     - docker push registry.gitlab.com/klinki/docker-registry/pse:latest
     - docker push registry.gitlab.com/klinki/docker-registry/pse:${VERSION}
 
-deploy:
+after_success:
     - cat ./deploy.sh | ssh ${DEPLOY_USER}@${DEPLOY_SERVER}
     - echo "Deploy finished"
