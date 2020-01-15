@@ -11,7 +11,7 @@
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="3.0.0" />
     <PackageReference Include="FinSharp.PragueStockExchange" Version="0.0.1-alpha" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="3.0.0" />
     <PackageReference Include="Quartz" Version="3.0.7" />
