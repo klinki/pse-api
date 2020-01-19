@@ -260,6 +260,4 @@ paket-files/
 __pycache__/
 *.pyc
 
-appsettings.Production.json
-
 deploy_key
