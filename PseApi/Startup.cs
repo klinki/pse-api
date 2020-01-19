@@ -5,9 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using PseApi.Configuration;
 using PseApi.Data;
 using Serilog;
+using System;
+using System.IO;
+using System.Reflection;
 
 namespace PseApi
 {
@@ -44,6 +48,21 @@ namespace PseApi
 
             services.ConfigureDI(Configuration);
             services.AddQuartz();
+
+//            services.AddSwagger
+            services.AddSwaggerGen(options => 
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "PSE API", Version = "v1" });
+                options.DescribeAllParametersInCamelCase();
+
+                var fileName = this.GetType().GetTypeInfo().Module.Name
+                    .Replace(".dll", ".xml")
+                    .Replace(".exe", ".xml");
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, fileName));
+
+                // options.ExampleFilters();
+            });
+            // services.AddSwaggerExamplesFromAssemblyOf<StockExamples>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -69,6 +88,13 @@ namespace PseApi
             });
 
             app.UseScheduler(lifetime);
+
+            app.UseSwagger();
+            app.UseSwaggerUI(options => 
+            {
+                options.RoutePrefix = string.Empty;
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "PSE (BCPP) API v1");
+            });
         }
     }
 }
