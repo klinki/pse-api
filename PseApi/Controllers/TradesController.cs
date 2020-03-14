@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PseApi.Controllers.Dto;
 using PseApi.Data;
 using PseApi.Queries;
 using PseApi.Services;
@@ -37,7 +36,11 @@ namespace PseApi.Controllers
         {
             if (!await _tradeService.IsValidDate(day))
             {
-                return BadRequest(new ErrorDto($"Invalid date {day}"));
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid date",
+                    Detail = $"'{day}' is not a valid trading day."
+                });
             }
 
             IEnumerable<Trade> result = await _tradeService.GetTradesForDay(day);
@@ -53,7 +56,11 @@ namespace PseApi.Controllers
 
             if (stockObject == null)
             {
-                return NotFound(new ErrorDto($"Stock with BIC {stock} was not found"));
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Stock not found",
+                    Detail = $"Stock with BIC {stock} was not found"
+                });
             }
 
             IQueryable<Trade> tradeQuery = BuildQuery(queryParams);
@@ -73,7 +80,11 @@ namespace PseApi.Controllers
 
             if (stockObject == null)
             {
-                return NotFound(new ErrorDto($"Stock with ISIN {isin} was not found"));
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Stock not found",
+                    Detail = $"Stock with ISIN {isin} was not found"
+                });
             }
 
             IQueryable<Trade> tradeQuery = BuildQuery(queryParams);
