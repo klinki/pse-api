@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PseApi</name>
+    </assembly>
+    <members>
+        <member name="T:PseApi.Configuration.DIConfiguration">
+            <summary>
+            DI Container configuration class.
+            </summary>
+        </member>
+        <member name="M:PseApi.Configuration.DIConfiguration.ConfigureDI(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Extension method registering services to DI container
+            </summary>
+            <param name="services"></param>
+            <param name="configuration"></param>
+            <returns></returns>
+        </member>
+        <member name="M:PseApi.Configuration.SchedulerExtensions.AddQuartz(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Adds Quartz to DI
+            </summary>
+            <param name="services"></param>
+        </member>
+        <member name="M:PseApi.Jobs.UpdateTrades.Execute(Quartz.IJobExecutionContext)">
+            <summary>
+            Gets new trades
+            </summary>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+        <member name="T:PseApi.Scheduler.ScopedJobRunner">
+            <summary>
+            ScopedJobRunner executes job within a new scope.
+            </summary>
+        </member>
+        <member name="M:PseApi.Scheduler.ScopedJobRunner.Execute(Quartz.IJobExecutionContext)">
+            <summary>
+            Safely executes job within a new scope.
+            </summary>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

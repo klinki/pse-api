@@ -14,6 +14,14 @@ RUN dotnet build "PseApi.csproj" -c Release -o /app
 FROM build AS publish
 RUN dotnet publish "PseApi.csproj" -c Release -o /app
 
+FROM publish AS test
+WORKDIR "/src"
+RUN dotnet restore "PseApi.IntegrationTests/PseApi.IntegrationTests.fsproj"
+RUN dotnet tool restore
+RUN dotnet swagger tofile --output PseApi.IntegrationTests/swagger.json /app/PseApi.dll v1
+WORKDIR "/src/PseApi.IntegrationTests"
+RUN dotnet test
+
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
