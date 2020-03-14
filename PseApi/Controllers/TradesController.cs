@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -32,6 +33,8 @@ namespace PseApi.Controllers
 
         // GET api/values
         [HttpGet("day/{day}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTradesForDay([FromRoute] DateTime day)
         {
             if (!await _tradeService.IsValidDate(day))
@@ -50,6 +53,8 @@ namespace PseApi.Controllers
 
         // GET api/values
         [HttpGet("{stock}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTrades([FromRoute] string stock, [FromQuery] TradeQuery queryParams)
         {
             Stock stockObject = await _stockService.GetStockByBicAsync(stock);
@@ -74,6 +79,8 @@ namespace PseApi.Controllers
 
         // GET api/values
         [HttpGet("isin/{isin}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTradesByIsin([FromRoute] string isin, [FromQuery] TradeQuery queryParams)
         {
             Stock stockObject = await _stockService.GetStockByIsinAsync(isin);

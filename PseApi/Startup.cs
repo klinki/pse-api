@@ -50,7 +50,6 @@ namespace PseApi
             services.ConfigureDI(Configuration);
             services.AddQuartz();
 
-//            services.AddSwagger
             services.AddSwaggerGen(options => 
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "PSE API", Version = "v1" });

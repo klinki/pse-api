@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using PseApi.Controllers.Dto;
 using PseApi.Services;
 
 namespace PseApi.Controllers
@@ -18,7 +19,7 @@ namespace PseApi.Controllers
 
         // GET api/values
         [HttpGet("version")]
-        public async Task<ActionResult> GetVersion()
+        public async Task<ActionResult<VersionDto>> GetVersion()
         {
             return Ok(new
             {
