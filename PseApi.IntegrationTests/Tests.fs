@@ -1,33 +1,20 @@
 module PseApi.IntegrationTests
 open System
-open System.IO
+open System.Net.Http
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
-open Microsoft.AspNetCore.TestHost
 open Microsoft.EntityFrameworkCore
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open PseApi
 open PseApi.Data
 open Xunit
-open System.Net.Http
-
-// module Fixtures =
-// type WebApplicationFixture() =
-//     do
-//     
-//         sprintf "" |> ignore
-//     
-//     interface IDisposable with
-//         
-//         member __.Dispose () =
-//             ()
+open OpenAPITypeProvider
 
 let configureApp (app : IApplicationBuilder) = 
     let env = app.ApplicationServices.GetService<IHostEnvironment>()
     match env.IsDevelopment() with
      | _ -> app.UseDeveloperExceptionPage()
-     // | false -> app.UseExceptionHandler()
      |> ignore
 
 let configureServices (services : IServiceCollection) = 
@@ -49,39 +36,54 @@ type CustomWebApplicationFactory<'TStartup when 'TStartup : not struct>() =
             .ConfigureServices(Action<IServiceCollection> configureServices)
         |> ignore
 
-let createHost() =
-    WebHostBuilder()
-        .UseContentRoot(Directory.GetCurrentDirectory()) 
-        .UseEnvironment("Test")
-        .Configure(Action<IApplicationBuilder> configureApp)
-        .ConfigureServices(Action<IServiceCollection> configureServices)
-
-[<Fact>]
-let ``GET api/about/version`` () =
-    let testData = async {
-        use server = new TestServer(createHost())
-        use client = server.CreateClient()
-        
-        let! data = (client.GetAsync "api/about/version" |> Async.AwaitTask)
-        return Assert.True data.IsSuccessStatusCode
-    }
-    testData |> Async.StartAsTask
-
 let createTestServer =
     let server = new CustomWebApplicationFactory<Startup>()
     server
 
-[<Fact>]
-let ``GET api/about/version Native`` () = async {
-        use server = createTestServer
-        use client = server.CreateClient()
-        
-        try
-            let! data = (client.GetAsync "api/about/version" |> Async.AwaitTask)
-            let code = data.StatusCode
-            printfn "Code: %s" (string code)
-            return Assert.True data.IsSuccessStatusCode
-        with
-            | ex -> printfn "Exception! %s " (ex.Message)
-    }
+let server = createTestServer
 
+[<Literal>]
+let swaggerPath = """swagger.json"""; // server.CreateClient().BaseAddress.AbsolutePath + "";
+
+type PseApiDefinition = OpenAPIV3Provider<"swagger.json">
+let pseApi = new PseApiDefinition();
+
+[<Fact>]
+let ``GET api/about/version should return information about version`` () = async {
+    use client = server.CreateClient()
+    
+    let! data = (client.GetAsync "api/about/version" |> Async.AwaitTask)
+    let! response = data.Content.ReadAsStringAsync() |> Async.AwaitTask
+
+    let responseJson = PseApiDefinition.Schemas.VersionDto.Parse(response);
+
+    Assert.True data.IsSuccessStatusCode
+    Assert.True responseJson.BuildDate.IsSome
+    Assert.True responseJson.Version.IsSome
+}
+
+[<Fact>]
+let ``POST api/about/version should return problem detail with status 405`` () = async {
+    use client = server.CreateClient()
+    
+    let! data = client.PostAsync("api/about/version", new StringContent("")) |> Async.AwaitTask
+    let! response = data.Content.ReadAsStringAsync() |> Async.AwaitTask
+    
+    let responseJson = PseApiDefinition.Schemas.ProblemDetails.Parse(response);
+ 
+    Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status405MethodNotAllowed, int data.StatusCode)
+    Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status405MethodNotAllowed, responseJson.Status.Value)
+}
+
+[<Fact>]
+let ``GET /some/totally/invalid/url should return problem detail with error 404`` () = async {
+    use client = server.CreateClient()
+    
+    let! data = client.GetAsync "some/totally/invalid/url" |> Async.AwaitTask
+    let! response = data.Content.ReadAsStringAsync() |> Async.AwaitTask
+    
+    let responseJson = PseApiDefinition.Schemas.ProblemDetails.Parse(response);
+
+    Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound, int data.StatusCode)
+    Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound, responseJson.Status.Value)
+}
