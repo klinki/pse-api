@@ -11,7 +11,7 @@ before_install:
 
     - TAG=$(git tag --contains $TRAVIS_COMMIT)
     - SHORT_COMMIT=$(git rev-parse --short $TRAVIS_COMMIT)
-    - VERSION=${TAG:-$SHORT_COMMIT}
+    - VERSION=$(git describe --tags --dirty --always)
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin registry.gitlab.com
     - docker build
       -t registry.gitlab.com/klinki/docker-registry/pse:latest

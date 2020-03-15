@@ -12,12 +12,19 @@
     <DocumentationFile>$(MSBuildProjectDirectory)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <MSBuildGitHashCommand>git describe --tags --long --always</MSBuildGitHashCommand>
+    <MSBuildGitHashValidate>False</MSBuildGitHashValidate>
+    <MSBuildGitHashReplaceInfoVersion>false</MSBuildGitHashReplaceInfoVersion>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="3.0.0" />
     <PackageReference Include="FinSharp.PragueStockExchange" Version="0.0.1-alpha" />
     <PackageReference Include="Hellang.Middleware.ProblemDetails" Version="4.4.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
+    <PackageReference Include="MSBuildGitHash" Version="1.0.1" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="3.1.1" />
     <PackageReference Include="Quartz" Version="3.0.7" />
     <PackageReference Include="Quartz.Serialization.Json" Version="3.0.7" />
