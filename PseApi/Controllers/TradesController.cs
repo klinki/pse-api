@@ -19,11 +19,11 @@ namespace PseApi.Controllers
     public class TradesController : ControllerBase
     {
         private readonly PseContext _context;
-        private readonly TradeService _tradeService;
+        private readonly ITradeService _tradeService;
         private readonly StockService _stockService;
         private readonly ILogger<TradesController> _logger;
 
-        public TradesController(PseContext context, TradeService tradeService, ILogger<TradesController> logger, StockService stockService)
+        public TradesController(PseContext context, ITradeService tradeService, ILogger<TradesController> logger, StockService stockService)
         {
             _context = context;
             _tradeService = tradeService;

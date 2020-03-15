@@ -9,7 +9,13 @@ using Microsoft.Extensions.Logging;
 
 namespace PseApi.Services
 {
-    public class TradeService
+    public interface ITradeService
+    {
+        Task<bool> IsValidDate(DateTime date);
+        Task<IEnumerable<Trade>> GetTradesForDay(DateTime day);
+    }
+    
+    public class TradeService : ITradeService
     {
         private readonly PseContext _context;
         private readonly PragueStockExchangeApiClient _pseClient;

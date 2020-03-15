@@ -1,13 +1,22 @@
 module PseApi.IntegrationTests
 open System
+open System.Collections.Generic
+open System.Net
 open System.Net.Http
+open System.Threading.Tasks
+open Foq
+open FsUnit
+open Hellang.Middleware.ProblemDetails
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.EntityFrameworkCore
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.AspNetCore.TestHost
+open Microsoft.Extensions.Logging
 open PseApi
 open PseApi.Data
+open PseApi.Services
 open Xunit
 open OpenAPITypeProvider
 
@@ -86,4 +95,44 @@ let ``GET /some/totally/invalid/url should return problem detail with error 404`
 
     Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound, int data.StatusCode)
     Assert.Equal(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound, responseJson.Status.Value)
+}
+
+
+(** Testing global exception logger *)
+let loggerMock = Mock<ILogger<ProblemDetailsMiddleware>>()
+                     .As<ILogger<ProblemDetailsMiddleware>>()
+                     .Setup(fun x -> <@ x.IsEnabled(any()) @>).Returns(true)
+                     .Create()
+let thrownExc = NotImplementedException("Testing if this exception will be logged")
+let tradeServiceMock =
+    Mock<ITradeService>()
+        .Setup(fun x -> <@ x.IsValidDate(any()) @>).Raises(thrownExc)
+        .Setup(fun x -> <@ x.GetTradesForDay(any()) @>).Returns(Task.FromResult<IEnumerable<Trade>>(Array.Empty<Trade>()))
+        .Create()
+
+let configureTestServices (services: IServiceCollection) =
+    services.AddScoped<ILogger<ProblemDetailsMiddleware>>(fun serviceProvider -> loggerMock)
+        .AddScoped<ITradeService>(fun sp -> tradeServiceMock)
+    |> ignore
+
+type WebAppFactoryForTestingLogging<'TStartup when 'TStartup : not struct>() = 
+    inherit Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<'TStartup>()
+    override _this.ConfigureWebHost builder =
+        builder.UseEnvironment("Test")
+            .ConfigureServices(Action<IServiceCollection> configureServices)
+            .ConfigureTestServices(Action<IServiceCollection> configureTestServices)
+        |> ignore
+
+[<Fact>]
+let ``Test global exception handling is configured`` () = async { 
+    use server = new WebAppFactoryForTestingLogging<Startup>()
+    use client = server.CreateClient()
+    
+    let! data = client.GetAsync "/api/trades/day/2020-01-01" |> Async.AwaitTask
+    let! response = data.Content.ReadAsStringAsync() |> Async.AwaitTask
+    
+    let responseJson = PseApiDefinition.Schemas.ProblemDetails.Parse(response)
+    
+    data.StatusCode |> should equal HttpStatusCode.InternalServerError
+    Mock.Verify(<@ loggerMock.Log(any(), any(), any(), thrownExc, any()) @>, once)
 }

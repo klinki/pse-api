@@ -64,7 +64,10 @@ namespace PseApi
             });
             // services.AddSwaggerExamplesFromAssemblyOf<StockExamples>();
 
-            services.AddProblemDetails();
+            services.AddProblemDetails(options =>
+            {
+                options.ShouldLogUnhandledException = (context, exception, details) => true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -17,7 +17,7 @@ namespace PseApi.Configuration
         /// <returns></returns>
         public static IServiceCollection ConfigureDI(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<TradeService>();
+            services.AddScoped<ITradeService, TradeService>();
             services.AddScoped<StockService>();
             services.AddScoped<FinSharp.PragueStockExchange.PragueStockExchangeApiClient>();
             services.AddTransient<AppInfoService>();
