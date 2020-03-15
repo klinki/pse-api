@@ -85,7 +85,11 @@ namespace PseApi
             app.UseRouting();
             app.UseCors();
 
-            app.UseHttpsRedirection();
+            if (Configuration.GetSection("HttpConfiguration")?.GetValue<bool>("UseHttpsRedirection") ?? false)
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseEndpoints(endpoints => 
             {
                 endpoints.MapControllers();
