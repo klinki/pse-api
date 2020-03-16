@@ -15,13 +15,14 @@ namespace PseApi.Controllers
             _logger = logger ?? NullLogger<ErrorController>.Instance;
         }
 
+        [ApiExplorerSettings(IgnoreApi=true)]
         [Route("/error")]
         public IActionResult Error()
         {
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
-            
+
             _logger.LogError(context.Error, "Unhandled exception.");
-            
+
             return Problem();
         }
     }
