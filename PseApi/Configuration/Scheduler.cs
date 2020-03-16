@@ -11,6 +11,7 @@ using Quartz.Logging;
 using Quartz.Spi;
 using System;
 using System.Collections.Specialized;
+using Serilog;
 
 namespace PseApi.Configuration
 {
@@ -88,6 +89,13 @@ namespace PseApi.Configuration
 
             var trigger = triggerBuilder.Build();
 
+            // TODO: Fix this issue - currently probably only in tests
+            if (scheduler.CheckExists(job.Key).Result)
+            {
+                Log.Logger.Warning("Job should not exist but it does. {@JobKey}", job.Key);
+                scheduler.DeleteJob(job.Key).Wait();
+            }
+            
             scheduler.ScheduleJob(job, trigger).Wait();
         }
 
