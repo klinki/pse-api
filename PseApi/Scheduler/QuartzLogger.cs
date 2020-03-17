@@ -11,7 +11,7 @@ namespace PseApi.Scheduler
 {
     public class QuartzLogger : ILogProvider
     {
-        ILogger<IScheduler> _logger;
+        private readonly ILogger<IScheduler> _logger;
 
         public QuartzLogger(ILogger<IScheduler> logger)
         {
@@ -20,22 +20,16 @@ namespace PseApi.Scheduler
 
         protected MSLogLevel GetMicrosoftLogLevel(QuartzLogLevel quartzLogLevel)
         {
-            switch (quartzLogLevel)
+            return quartzLogLevel switch
             {
-                default:
-                case QuartzLogLevel.Info:
-                    return MSLogLevel.Information;
-                case QuartzLogLevel.Debug:
-                    return MSLogLevel.Debug;
-                case QuartzLogLevel.Error:
-                    return MSLogLevel.Error;
-                case QuartzLogLevel.Fatal:
-                    return MSLogLevel.Critical;
-                case QuartzLogLevel.Trace:
-                    return MSLogLevel.Trace;
-                case QuartzLogLevel.Warn:
-                    return MSLogLevel.Warning;
-            }
+                QuartzLogLevel.Info => MSLogLevel.Information,
+                QuartzLogLevel.Debug => MSLogLevel.Debug,
+                QuartzLogLevel.Error => MSLogLevel.Error,
+                QuartzLogLevel.Fatal => MSLogLevel.Critical,
+                QuartzLogLevel.Trace => MSLogLevel.Trace,
+                QuartzLogLevel.Warn => MSLogLevel.Warning,
+                _ => MSLogLevel.Information
+            };
         }
 
         public Logger GetLogger(string name)
@@ -44,7 +38,7 @@ namespace PseApi.Scheduler
             {
                 if (func != null)
                 {
-                    _logger.Log(GetMicrosoftLogLevel(level), func(), parameters);
+                    _logger.Log(GetMicrosoftLogLevel(level), exception, func(), parameters);
                 }
 
                 return true;
