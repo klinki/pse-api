@@ -86,6 +86,7 @@ namespace PseApi
             }
 
             app.UseProblemDetails();
+            app.UseSerilogRequestLogging();
 
             app.UseRouting();
             app.UseCors();
