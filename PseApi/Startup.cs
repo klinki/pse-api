@@ -96,8 +96,9 @@ namespace PseApi
                 app.UseHttpsRedirection();
             }
 
-            app.UseEndpoints(endpoints => 
+            app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHealthChecks("/healthz");
                 endpoints.MapControllers();
             });
 
