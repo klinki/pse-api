@@ -9,9 +9,9 @@ namespace PseApi.Jobs
     public class UpdateTrades : IJob
     {
         private readonly ILogger<UpdateTrades> _logger;
-        private readonly TradeService _tradeService;
+        private readonly ITradeService _tradeService;
 
-        public UpdateTrades(ILogger<UpdateTrades> logger, TradeService tradeService)
+        public UpdateTrades(ILogger<UpdateTrades> logger, ITradeService tradeService)
         {
             _logger = logger;
             _tradeService = tradeService;
