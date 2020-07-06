@@ -9,6 +9,7 @@ before_install:
     - echo -e "Host cloud.inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
+install:
     - TAG=$(git tag --contains $TRAVIS_COMMIT)
     - SHORT_COMMIT=$(git rev-parse --short $TRAVIS_COMMIT)
     - VERSION=$(git describe --tags --dirty --always)
@@ -19,9 +20,10 @@ before_install:
       --build-arg VERSION=${VERSION}
       --build-arg SHORT_COMMIT=${SHORT_COMMIT}
       .
-    - docker push registry.gitlab.com/klinki/docker-registry/pse:latest
-    - docker push registry.gitlab.com/klinki/docker-registry/pse:${VERSION}
 
-after_success:
-    - cat ./deploy.sh | ssh -i ./deploy_key ${DEPLOY_USER}@${DEPLOY_SERVER}
-    - echo "Deploy finished"
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: bash travis-deploy.sh
+  on:
+    branch: master
