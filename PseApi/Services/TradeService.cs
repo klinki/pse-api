@@ -42,18 +42,19 @@ namespace PseApi.Services
         {
             day = new DateTime(day.Year, day.Month, day.Day);
 
-            Dataset dataset = await _context.Datasets.AsNoTracking().SingleOrDefaultAsync(row => row.Day == day);
+            Dataset dataset = await _context.Datasets.AsNoTracking()
+                .SingleOrDefaultAsync(row => row.Day == day);
             IEnumerable<Trade> trades;
 
             if (dataset == null)
             {
                 _logger.LogInformation("Data for date: {Date} not downloaded yet, downloading...", day);
 
-                IEnumerable<PragueStockExchangeCsvRow> csvData = await _pseClient.GetData(day);
+                var csvData = (await _pseClient.GetData(day)).ToList();
 
                 _logger.LogInformation("Downloaded: {Count} records", csvData.Count());
 
-                int countNullValues = csvData.Where(csvTrade => csvTrade == null).Count();
+                int countNullValues = csvData.Count(csvTrade => csvTrade == null);
 
                 if (countNullValues > 0)
                 {
@@ -81,26 +82,26 @@ namespace PseApi.Services
                     Previous = csvTrade.Previous,
                     TradedAmount = csvTrade.TradedAmount,
                     Volume = csvTrade.Volume
-                });
+                }).ToList();
 
                 dataset = new Dataset
                 {
                     Day = day
                 };
 
-                using (var transaction = await _context.Database.BeginTransactionAsync())
+                await using (var transaction = await _context.Database.BeginTransactionAsync())
                 {
                     try
                     {
                         await _context.Trades.AddRangeAsync(trades);
                         await _context.Datasets.AddAsync(dataset);
                         await _context.SaveChangesAsync();
-                        transaction.Commit();
+                        await transaction.CommitAsync();
                     }
                     catch (Exception e)
                     {
                         _logger.LogError(e, "Exception thrown when saving data to database");
-                        transaction.Rollback();
+                        await transaction.RollbackAsync();
                         throw;
                     }
                 }
