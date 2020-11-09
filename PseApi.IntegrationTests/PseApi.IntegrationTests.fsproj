@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Foq" Version="1.8.0" />
-        <PackageReference Include="FsUnit.xUnit" Version="3.9.0" />
+        <PackageReference Include="FsUnit.xUnit" Version="4.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="3.1.6" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="3.1.6" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
