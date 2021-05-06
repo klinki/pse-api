@@ -19,7 +19,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="3.1.1" />
+    <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="5.0.1" />
     <PackageReference Include="FinSharp" Version="0.0.2-alpha" />
     <PackageReference Include="FinSharp.PragueStockExchange" Version="0.0.3-alpha" />
     <PackageReference Include="Hellang.Middleware.ProblemDetails" Version="5.1.1" />
