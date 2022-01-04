@@ -10,7 +10,8 @@ using Quartz.Impl;
 using Quartz.Logging;
 using Quartz.Spi;
 using System;
-using System.Collections.Specialized;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 
 namespace PseApi.Configuration
@@ -21,47 +22,46 @@ namespace PseApi.Configuration
         /// Adds Quartz to DI
         /// </summary>
         /// <param name="services"></param>
-        public static void AddQuartz(this IServiceCollection services)
+        public static void AddQuartz(this IServiceCollection services, [NotNull] IConfiguration configuration)
         {
             services.AddSingleton<IJobFactory, QuartzJobFactory>();
-            services.AddSingleton<QuartzLogger>();
 
-            services.AddSingleton(provider =>
+            services.Configure<QuartzOptions>(configuration.GetSection("quartz"));
+            services.Configure<QuartzOptions>(options =>
             {
-                var properties = new NameValueCollection
-                {
-                    // json serialization is the one supported under .NET Core (binary isn't)
-                    ["quartz.serializer.type"] = "json",
+                options["quartz.serializer.type"] = "json";
+                options["quartz.threadPool.threadCount"] = "2";
+            });
 
-                    ["quartz.threadPool.threadCount"] = "2"
-                };
+            services.AddQuartz(configurator =>
+            {
+                configurator.UseJobFactory<QuartzJobFactory>();
+            });
+            services.AddQuartzServer(options =>
+            {
+                options.WaitForJobsToComplete = true;
+            });
 
-                ISchedulerFactory schedulerFactory = new StdSchedulerFactory(properties);
-                IScheduler scheduler = schedulerFactory.GetScheduler().Result;
-
-                scheduler.JobFactory = provider.GetService<IJobFactory>();
+            services.AddSingleton<IScheduler>(sp =>
+            {
+                var schedulerFactory = sp.GetRequiredService<ISchedulerFactory>();
+                var scheduler = schedulerFactory.GetScheduler().Result;
 
                 return scheduler;
             });
-
+            
             services.RegisterJob<ScopedJobRunner>();
             services.RegisterJob<UpdateTrades>();
         }
 
         public static void RegisterJob<TJob>(this IServiceCollection services) where TJob : class, IJob
         {
-            services.AddSingleton<TJob>();
+            services.AddScoped<TJob>();
         }
 
         public static void UseScheduler(this IApplicationBuilder app, IHostApplicationLifetime lifetime)
         {
-            QuartzLogger logger = app.ApplicationServices.GetService<QuartzLogger>();
-            LogProvider.SetCurrentLogProvider(logger);
-
-            IScheduler scheduler = app.ApplicationServices.GetRequiredService<IScheduler>();
-
-            lifetime.ApplicationStarted.Register(() => scheduler.Start());
-            lifetime.ApplicationStopping.Register(() => scheduler.Shutdown());
+            var scheduler = app.ApplicationServices.GetRequiredService<IScheduler>();
 
             app.ScheduleJob<UpdateTrades>(
                 TriggerBuilder.Create()
@@ -75,9 +75,9 @@ namespace PseApi.Configuration
 
         public static void ScheduleJob<TJob>(this IApplicationBuilder app, TriggerBuilder triggerBuilder) where TJob: class, IJob
         {
-            IScheduler scheduler = app.ApplicationServices.GetRequiredService<IScheduler>();
+            var scheduler = app.ApplicationServices.GetRequiredService<IScheduler>();
 
-            string jobName = typeof(TJob).FullName;
+            var jobName = typeof(TJob).FullName;
 
             var job = JobBuilder.Create<TJob>()
                 .WithIdentity(jobName)

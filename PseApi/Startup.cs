@@ -47,7 +47,7 @@ namespace PseApi
             services.AddHealthChecks().AddMySql(connectionString);
 
             services.ConfigureDI(Configuration);
-            services.AddQuartz();
+            services.AddQuartz(Configuration);
 
             services.AddSwaggerGen(options => 
             {
