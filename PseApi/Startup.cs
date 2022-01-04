@@ -29,12 +29,11 @@ namespace PseApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+            services.AddControllers();
 
             var connectionString = Configuration.GetConnectionString("Default");
-
-            services.AddDbContext<PseContext>(options => options.UseMySql(connectionString));
+            var serverVersion = ServerVersion.AutoDetect(connectionString);
+            services.AddDbContext<PseContext>(options => options.UseMySql(connectionString, serverVersion));
 
             services.AddCors(options =>
             {
