@@ -33,7 +33,10 @@ let configureServices (services : IServiceCollection) =
         (fun (options : DbContextOptionsBuilder) -> 
         match env.IsEnvironment("Test") with
         | true -> options.UseInMemoryDatabase("client_tests") |> ignore
-        | false -> options.UseMySql(@"Data Source=(localdb)\v11.0;Initial Catalog=ContentDataDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False") |> ignore)
+        | false ->
+            let connectionString = @"Data Source=(localdb)\v11.0;Initial Catalog=ContentDataDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            let serverVersion = ServerVersion.AutoDetect(connectionString); 
+            options.UseMySql(connectionString, serverVersion) |> ignore)
     |> ignore
     services.AddCors() |> ignore
 

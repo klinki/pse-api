@@ -32,8 +32,11 @@ namespace PseApi
             services.AddControllers();
 
             var connectionString = Configuration.GetConnectionString("Default");
-            var serverVersion = ServerVersion.AutoDetect(connectionString);
-            services.AddDbContext<PseContext>(options => options.UseMySql(connectionString, serverVersion));
+            services.AddDbContext<PseContext>(options =>
+            {
+                var serverVersion = ServerVersion.AutoDetect(connectionString);
+                options.UseMySql(connectionString, serverVersion);
+            });
 
             services.AddCors(options =>
             {
