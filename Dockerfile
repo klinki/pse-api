@@ -12,12 +12,14 @@ RUN dotnet restore "PseApi/PseApi.csproj"
 COPY . .
 WORKDIR "/src/PseApi"
 ARG SHORT_COMMIT
-ARG VERSION
+# -- VERSION clashes with other VERSION variable name
+ARG VERZION
 RUN dotnet build "PseApi.csproj" -p:SourceRevisionId=${SHORT_COMMIT} -p:MSBuildGitHashValue=${SHORT_COMMIT} -c Release -o /app
 
 FROM build AS publish
 ARG SHORT_COMMIT
-ARG VERSION
+# -- VERSION clashes with other VERSION variable name
+ARG VERZION
 RUN dotnet publish "PseApi.csproj" -p:SourceRevisionId=${SHORT_COMMIT} -p:MSBuildGitHashValue=${SHORT_COMMIT} -c Release -o /app
 
 FROM publish AS test
