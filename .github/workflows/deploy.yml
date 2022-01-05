@@ -1,0 +1,58 @@
+name: Deploy
+
+on: 
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-test-deploy:
+    concurrency: single
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+      VERSION: 0
+      TAG: 0
+      SHORT_COMMIT: 0
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: before_install
+        run: |-
+          openssl aes-256-cbc \
+            -K "${{ secrets.encrypted_699ce602e140_key }}" \
+            -iv "${{ secrets.encrypted_699ce602e140_iv }}" \
+            -in deploy_key.enc \
+            -out deploy_key -d
+          chmod 600 ./deploy_key
+          mkdir ~/.ssh
+          echo -e "Host cloud.inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+          echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+          
+      - name: Login to GitLab
+        uses: docker/login-action@v1
+        with:
+          registry: registry.gitlab.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: install
+        run: |-
+          TAG=$(git tag --contains $GITHUB_SHA)
+          SHORT_COMMIT=$(git rev-parse --short $GITHUB_SHA)
+          VERSION=$(git describe --tags --dirty --always)
+          docker build \
+            -t registry.gitlab.com/klinki/docker-registry/pse:latest \
+            -t registry.gitlab.com/klinki/docker-registry/pse:${VERSION} \
+            --build-arg VERZION=${VERSION} \
+            --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
+            .
+
+      - name: deploy
+        if: ${{ github.ref_name == 'master' }}
+        run: |-
+          chmod +x ./travis-deploy.sh
+          chmod +x ./deploy.sh
+          ./travis-deploy.sh
