@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <UserSecretsId>14b122fe-d097-4fc3-a109-7dcf73c32ff4</UserSecretsId>
-    <LangVersion>8.0</LangVersion>
+    <UserSecretsId>pse-api-14b122fe-d097-4fc3-a109-7dcf73c32ff4</UserSecretsId>
+    <LangVersion>10</LangVersion>
     <NullableReferenceTypes>true</NullableReferenceTypes>
   </PropertyGroup>
 
