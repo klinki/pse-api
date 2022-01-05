@@ -17,6 +17,7 @@ ProjectSection(SolutionItems) = preProject
 	README.md = README.md
 	build.sh = build.sh
 	deploy.sh = deploy.sh
+	.github\workflows\deploy.yml = .github\workflows\deploy.yml
 EndProjectSection
 EndProject
 Global
