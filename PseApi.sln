@@ -12,7 +12,6 @@ ProjectSection(SolutionItems) = preProject
 	.dockerignore = .dockerignore
 	.gitattributes = .gitattributes
 	.gitignore = .gitignore
-	.travis.yml = .travis.yml
 	Dockerfile = Dockerfile
 	README.md = README.md
 	build.sh = build.sh
