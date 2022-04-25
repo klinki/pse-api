@@ -45,7 +45,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.2.3" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.2.3" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUi" Version="6.2.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUi" Version="6.3.1" />
     <PackageReference Include="Timestamp" Version="1.0.2" />
   </ItemGroup>
 
