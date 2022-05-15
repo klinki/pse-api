@@ -1,0 +1,25 @@
+name: Build
+
+on: 
+  push:
+    branches-ignore:
+      - master
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 0
+      TAG: 0
+      SHORT_COMMIT: 0
+    steps:
+      - uses: actions/checkout@v2
+      - name: build and test
+        run: |-
+          TAG=$(git tag --contains $GITHUB_SHA)
+          SHORT_COMMIT=$(git rev-parse --short $GITHUB_SHA)
+          VERSION=$(git describe --tags --dirty --always)
+          docker build \
+            --build-arg VERZION=${VERSION} \
+            --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
+            .

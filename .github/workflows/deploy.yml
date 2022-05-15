@@ -2,12 +2,15 @@ name: Deploy
 
 on: 
   push:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
   build-test-deploy:
     concurrency: single
     runs-on: ubuntu-latest
+    environment: Production
     env:
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
