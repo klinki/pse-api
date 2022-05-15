@@ -14,7 +14,7 @@ WORKDIR "/src/PseApi"
 ARG SHORT_COMMIT
 # -- VERSION clashes with other VERSION variable name
 ARG VERZION
-RUN dotnet build "PseApi.csproj" -p:SourceRevisionId=${SHORT_COMMIT} -p:MSBuildGitHashValue=${SHORT_COMMIT} -c Release -o /app
+RUN dotnet build "PseApi.csproj" -p:SourceRevisionId=${SHORT_COMMIT} -p:MSBuildGitHashValue=${SHORT_COMMIT} -c Release --no-restore -o /app
 
 FROM build AS publish
 ARG SHORT_COMMIT
@@ -28,7 +28,10 @@ RUN dotnet restore "PseApi.IntegrationTests/PseApi.IntegrationTests.fsproj"
 RUN dotnet tool restore
 RUN dotnet swagger tofile --output PseApi.IntegrationTests/swagger.json /app/PseApi.dll v1
 WORKDIR "/src/PseApi.IntegrationTests"
-RUN dotnet test
+RUN dotnet test --logger:"junit;LogFilePath=test-result.xml"
+
+FROM scratch as export-test-results
+COPY --from=test /src/PseApi.IntegrationTests/*.xml .
 
 FROM base AS final
 WORKDIR /app

@@ -14,12 +14,34 @@ jobs:
       SHORT_COMMIT: 0
     steps:
       - uses: actions/checkout@v2
-      - name: build and test
+      - name: Build
         run: |-
           TAG=$(git tag --contains $GITHUB_SHA)
           SHORT_COMMIT=$(git rev-parse --short $GITHUB_SHA)
           VERSION=$(git describe --tags --dirty --always)
-          docker build \
+          DOCKER_BUILDKIT=1 docker build \
             --build-arg VERZION=${VERSION} \
             --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
             .
+
+      - name: Test
+        run: |-
+          DOCKER_BUILDKIT=1 docker build \
+            --build-arg VERZION=${VERSION} \
+            --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
+            --target test \
+            .
+          DOCKER_BUILDKIT=1 docker build \
+            --build-arg VERZION=${VERSION} \
+            --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
+            --target export-test-results \
+            --output type=local,dest=TestResults \
+            .
+
+      - name: Test Report
+        if: always() # Run even if tests fail
+        uses: dorny/test-reporter@v1
+        with:
+          name: Test Results            # Name of the check run which will be created
+          path: "**/TestResults/*.xml"    # Path to test results
+          reporter: java-junit        # Format of test results
