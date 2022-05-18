@@ -14,7 +14,7 @@
     <ItemGroup>
         <PackageReference Include="Foq" Version="1.8.0" />
         <PackageReference Include="FsUnit.xUnit" Version="5.0.0" />
-        <PackageReference Include="JunitXml.TestLogger" Version="3.0.110" />
+        <PackageReference Include="JunitXml.TestLogger" Version="3.0.114" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.5" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
