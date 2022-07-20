@@ -6,6 +6,7 @@ on:
       - master
 
 permissions:
+  statuses: write
   id-token: write
   contents: read
   checks: write
