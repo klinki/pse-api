@@ -5,6 +5,11 @@ on:
     branches-ignore:
       - master
 
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
