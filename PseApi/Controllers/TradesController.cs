@@ -83,7 +83,8 @@ namespace PseApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<Trade>>> GetTradesByIsin([FromRoute] string isin, [FromQuery] TradeQuery queryParams)
         {
-            Stock stockObject = await _stockService.GetStockByIsinAsync(isin);
+            var stockObject = await _stockService.GetStockByIsinAsync(isin) 
+                           ?? await CreateStockFromTrade(isin);
 
             if (stockObject == null)
             {
@@ -101,6 +102,30 @@ namespace PseApi.Controllers
                 .ToListAsync();
 
             return Ok(result);
+        }
+
+        private async Task<Stock?> CreateStockFromTrade(string isin)
+        {
+            Stock stockObject = null;
+
+            var trade = await _context.Trades
+                .Where(row => row.ISIN == isin)
+                .Take(1)
+                .FirstOrDefaultAsync();
+
+            if (trade != null)
+            {
+                stockObject = new Stock
+                {
+                    Name = trade.Name,
+                    BIC = trade.BIC,
+                    ISIN = trade.ISIN,
+                };
+                await _context.Stocks.AddAsync(stockObject);
+                await _context.SaveChangesAsync();
+            }
+
+            return stockObject;
         }
 
         // GET api/values

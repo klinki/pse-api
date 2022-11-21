@@ -28,7 +28,7 @@ namespace PseApi.Services
                 .SingleOrDefaultAsync();
         }
 
-        public Task<Stock> GetStockByIsinAsync(string isin)
+        public Task<Stock?> GetStockByIsinAsync(string isin)
         {
             return _context.Stocks.Where(stock => stock.ISIN == isin)
                 .SingleOrDefaultAsync();
