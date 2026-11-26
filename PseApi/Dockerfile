@@ -1,11 +1,13 @@
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/aspnet:11.0-alpine AS base
 WORKDIR /app
+# .NET 8+ images listen on 8080 by default; keep port 80 used by the deployment
+ENV ASPNETCORE_HTTP_PORTS=80
 EXPOSE 80
 EXPOSE 443
 # Required for Time Zone database lookups
 RUN apk add --no-cache tzdata
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0-alpine AS build
 WORKDIR /src
 COPY ["PseApi/PseApi.csproj", "PseApi/"]
 RUN dotnet restore "PseApi/PseApi.csproj"

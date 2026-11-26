@@ -1,4 +1,4 @@
-module PseApi.IntegrationTests
+module PseApi.IntegrationTests.Tests
 open System
 open System.Collections.Generic
 open System.Net
@@ -10,7 +10,9 @@ open Hellang.Middleware.ProblemDetails
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.DependencyInjection.Extensions
 open Microsoft.Extensions.Hosting
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.Logging
@@ -29,6 +31,9 @@ let configureApp (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) = 
     let env = services.BuildServiceProvider().GetService<IHostEnvironment>();
 
+    // AddDbContext composes option callbacks (EF Core 8+), so drop the app's MySQL configuration first
+    services.RemoveAll<IDbContextOptionsConfiguration<PseContext>>() |> ignore
+
     services.AddDbContext<PseContext>
         (fun (options : DbContextOptionsBuilder) -> 
         match env.IsEnvironment("Test") with
@@ -45,7 +50,7 @@ type CustomWebApplicationFactory<'TStartup when 'TStartup : not struct>() =
     override _this.ConfigureWebHost builder =
         builder.UseEnvironment("Test")
             // .Configure(configureApp)
-            .ConfigureServices(Action<IServiceCollection> configureServices)
+            .ConfigureTestServices(Action<IServiceCollection> configureServices)
         |> ignore
 
 let createTestServer =
@@ -122,7 +127,7 @@ type WebAppFactoryForTestingLogging<'TStartup when 'TStartup : not struct>() =
     inherit Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<'TStartup>()
     override _this.ConfigureWebHost builder =
         builder.UseEnvironment("Test")
-            .ConfigureServices(Action<IServiceCollection> configureServices)
+            .ConfigureTestServices(Action<IServiceCollection> configureServices)
             .ConfigureTestServices(Action<IServiceCollection> configureTestServices)
         |> ignore
 

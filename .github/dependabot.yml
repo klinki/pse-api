@@ -34,3 +34,15 @@ updates:
   - dependency-name: Microsoft.VisualStudio.Web.CodeGeneration.Design
     versions:
     - 5.0.1
+  # Pomelo.EntityFrameworkCore.MySql 9.x pins EF Core to 9.x; bump together with Pomelo
+  - dependency-name: Microsoft.EntityFrameworkCore.*
+    update-types:
+    - version-update:semver-major
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: weekly
+- package-ecosystem: docker
+  directory: "/"
+  schedule:
+    interval: weekly

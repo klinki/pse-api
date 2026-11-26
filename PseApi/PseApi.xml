@@ -19,27 +19,18 @@
         </member>
         <member name="M:PseApi.Configuration.SchedulerExtensions.AddQuartz(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
             <summary>
-            Adds Quartz to DI
+            Adds Quartz to DI and schedules the application's jobs.
+            Jobs are resolved from a new DI scope for every execution.
             </summary>
             <param name="services"></param>
+            <param name="configuration"></param>
         </member>
-        <member name="M:PseApi.Jobs.UpdateTrades.Execute(Quartz.IJobExecutionContext)">
+        <member name="M:PseApi.Jobs.UpdateTrades.Execute(Quartz.IJobExecutionContext,System.Threading.CancellationToken)">
             <summary>
             Gets new trades
             </summary>
             <param name="context"></param>
-            <returns></returns>
-        </member>
-        <member name="T:PseApi.Scheduler.ScopedJobRunner">
-            <summary>
-            ScopedJobRunner executes job within a new scope.
-            </summary>
-        </member>
-        <member name="M:PseApi.Scheduler.ScopedJobRunner.Execute(Quartz.IJobExecutionContext)">
-            <summary>
-            Safely executes job within a new scope.
-            </summary>
-            <param name="context"></param>
+            <param name="cancellationToken"></param>
             <returns></returns>
         </member>
     </members>

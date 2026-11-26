@@ -27,7 +27,7 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       DOCKER_BUILDKIT: 1
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: before_install
         run: |-
@@ -42,7 +42,7 @@ jobs:
           echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
       - name: Login to GitLab
-        uses: docker/login-action@v1
+        uses: docker/login-action@v4
         with:
           registry: registry.gitlab.com
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -74,7 +74,7 @@ jobs:
 
       - name: Test Report
         if: always() # Run even if tests fail
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Test Results            # Name of the check run which will be created
           path: "**/TestResults/*.xml"    # Path to test results
