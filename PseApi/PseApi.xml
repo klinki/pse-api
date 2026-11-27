@@ -25,6 +25,12 @@
             <param name="services"></param>
             <param name="configuration"></param>
         </member>
+        <member name="F:PseApi.Data.PseContext.CaseInsensitiveCollation">
+            <summary>
+            Case-insensitive ICU collation used for stock identifiers (BIC, ISIN), so lookups behave
+            like they did on MySQL (utf8mb3_general_ci), e.g. <c>/api/trades/isin/cz0005112300</c>.
+            </summary>
+        </member>
         <member name="M:PseApi.Jobs.UpdateTrades.Execute(Quartz.IJobExecutionContext,System.Threading.CancellationToken)">
             <summary>
             Gets new trades
@@ -32,6 +38,18 @@
             <param name="context"></param>
             <param name="cancellationToken"></param>
             <returns></returns>
+        </member>
+        <member name="T:PseApi.Migrations._20261127095647_InitialPostgreSql">
+            <inheritdoc />
+        </member>
+        <member name="M:PseApi.Migrations._20261127095647_InitialPostgreSql.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:PseApi.Migrations._20261127095647_InitialPostgreSql.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:PseApi.Migrations._20261127095647_InitialPostgreSql.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
         </member>
     </members>
 </doc>

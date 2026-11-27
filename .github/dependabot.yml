@@ -6,10 +6,6 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
   ignore:
-  - dependency-name: Pomelo.EntityFrameworkCore.MySql
-    versions:
-    - 3.2.4
-    - 3.2.5
   - dependency-name: Quartz.Serialization.Json
     versions:
     - 3.2.4
@@ -34,10 +30,6 @@ updates:
   - dependency-name: Microsoft.VisualStudio.Web.CodeGeneration.Design
     versions:
     - 5.0.1
-  # Pomelo.EntityFrameworkCore.MySql 9.x pins EF Core to 9.x; bump together with Pomelo
-  - dependency-name: Microsoft.EntityFrameworkCore.*
-    update-types:
-    - version-update:semver-major
 - package-ecosystem: github-actions
   directory: "/"
   schedule:

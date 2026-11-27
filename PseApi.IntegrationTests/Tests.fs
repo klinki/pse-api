@@ -31,17 +31,14 @@ let configureApp (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) = 
     let env = services.BuildServiceProvider().GetService<IHostEnvironment>();
 
-    // AddDbContext composes option callbacks (EF Core 8+), so drop the app's MySQL configuration first
+    // AddDbContext composes option callbacks (EF Core 8+), so drop the app's PostgreSQL configuration first
     services.RemoveAll<IDbContextOptionsConfiguration<PseContext>>() |> ignore
 
     services.AddDbContext<PseContext>
         (fun (options : DbContextOptionsBuilder) -> 
         match env.IsEnvironment("Test") with
         | true -> options.UseInMemoryDatabase("client_tests") |> ignore
-        | false ->
-            let connectionString = @"Data Source=(localdb)\v11.0;Initial Catalog=ContentDataDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
-            let serverVersion = ServerVersion.AutoDetect(connectionString); 
-            options.UseMySql(connectionString, serverVersion) |> ignore)
+        | false -> options.UseNpgsql("Host=localhost;Database=pse_tests") |> ignore)
     |> ignore
     services.AddCors() |> ignore
 

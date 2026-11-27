@@ -15,7 +15,7 @@
         <PackageReference Include="Foq" Version="1.8.0" />
         <PackageReference Include="FsUnit.xUnit" Version="8.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.23" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="11.0.0" />
         <PackageReference Include="OpenAPITypeProvider" Version="2.3.0" />
         <!-- Transitive dependency pin: patched version of package pulled in by OpenAPITypeProvider -->
         <PackageReference Include="YamlDotNet" Version="5.0.0" />

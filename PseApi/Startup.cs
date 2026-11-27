@@ -32,11 +32,7 @@ namespace PseApi
             services.AddControllers();
 
             var connectionString = Configuration.GetConnectionString("Default");
-            services.AddDbContext<PseContext>(options =>
-            {
-                var serverVersion = ServerVersion.AutoDetect(connectionString);
-                options.UseMySql(connectionString, serverVersion);
-            });
+            services.AddDbContext<PseContext>(options => options.UseNpgsql(connectionString));
 
             services.AddCors(options =>
             {
@@ -47,7 +43,7 @@ namespace PseApi
                 });
             });
 
-            services.AddHealthChecks().AddMySql(_ => connectionString);
+            services.AddHealthChecks().AddNpgSql(_ => connectionString);
 
             services.ConfigureDI(Configuration);
             services.AddQuartz(Configuration);
