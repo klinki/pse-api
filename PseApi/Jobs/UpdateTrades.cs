@@ -2,6 +2,7 @@
 using PseApi.Services;
 using Quartz;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PseApi.Jobs
@@ -21,8 +22,9 @@ namespace PseApi.Jobs
         /// Gets new trades
         /// </summary>
         /// <param name="context"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task Execute(IJobExecutionContext context)
+        public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Started {Name} execution", nameof(UpdateTrades));
 
@@ -32,7 +34,6 @@ namespace PseApi.Jobs
             }
 
             _logger.LogInformation("Finished {Name} execution", nameof(UpdateTrades));
-            await Task.CompletedTask;
         }
     }
 }

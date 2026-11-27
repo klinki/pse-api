@@ -19,13 +19,15 @@ namespace PseApi.Data.Configurations
                 .HasColumnType("bigint");
 
             builder.Property(e => e.ISIN)
-                .HasColumnType("varchar(255)");
+                .HasColumnType("varchar(255)")
+                .UseCollation(PseContext.CaseInsensitiveCollation);
 
             builder.Property(e => e.Name)
                 .HasColumnType("varchar(255)");
 
             builder.Property(e => e.BIC)
-                .HasColumnType("varchar(255)");
+                .HasColumnType("varchar(255)")
+                .UseCollation(PseContext.CaseInsensitiveCollation);
         }
     }
 }

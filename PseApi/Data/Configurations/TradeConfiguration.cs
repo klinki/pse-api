@@ -14,15 +14,20 @@ namespace PseApi.Data.Configurations
             builder.HasIndex(e => e.Date);
             builder.HasIndex(e => e.BIC);
             builder.HasIndex(e => e.ISIN);
+            // One row per stock and day (existed on the MySQL database as a manually added key)
+            builder.HasIndex(e => new { e.ISIN, e.Date })
+                .IsUnique();
 
             builder.Property(e => e.Id)
                 .HasColumnType("bigint");
 
             builder.Property(e => e.ISIN)
-                .HasColumnType("varchar(255)");
+                .HasColumnType("varchar(255)")
+                .UseCollation(PseContext.CaseInsensitiveCollation);
 
             builder.Property(e => e.BIC)
-                .HasColumnType("varchar(255)");
+                .HasColumnType("varchar(255)")
+                .UseCollation(PseContext.CaseInsensitiveCollation);
 
             builder.Property(e => e.Change)
                .HasColumnType("decimal(16,4)");

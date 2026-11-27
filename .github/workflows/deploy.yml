@@ -1,14 +1,12 @@
 name: Deploy
 
-on: 
+on:
   push:
     branches:
       - master
   workflow_dispatch:
 
 permissions:
-  statuses: write
-  id-token: write
   contents: read
   checks: write
 
@@ -18,53 +16,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     env:
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
-      VERSION: 0
-      TAG: 0
-      SHORT_COMMIT: 0
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      IMAGE: registry.gitlab.com/klinki/docker-registry/pse
       DOCKER_BUILDKIT: 1
     steps:
-      - uses: actions/checkout@v2
-
-      - name: before_install
-        run: |-
-          openssl aes-256-cbc \
-            -K "${{ secrets.encrypted_699ce602e140_key }}" \
-            -iv "${{ secrets.encrypted_699ce602e140_iv }}" \
-            -in deploy_key.enc \
-            -out deploy_key -d
-          chmod 600 ./deploy_key
-          mkdir ~/.ssh
-          echo -e "Host cloud.inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-          echo -e "Host inviser.cz\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-
-      - name: Login to GitLab
-        uses: docker/login-action@v1
+      - uses: actions/checkout@v7
         with:
-          registry: registry.gitlab.com
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          fetch-depth: 0 # tags for git describe
 
-      - name: Build
+      - name: Version
         run: |-
-          TAG=$(git tag --contains $GITHUB_SHA)
-          SHORT_COMMIT=$(git rev-parse --short $GITHUB_SHA)
-          VERSION=$(git describe --tags --dirty --always)
-          docker build \
-            --build-arg VERZION=${VERSION} \
-            --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
-            .
+          echo "VERSION=$(git describe --tags --dirty --always)" >> "$GITHUB_ENV"
+          echo "SHORT_COMMIT=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
 
       - name: Test
         run: |-
-          docker build \
-            --build-arg VERZION=${VERSION} \
-            --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
-            --target test \
-            .
           docker build \
             --build-arg VERZION=${VERSION} \
             --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
@@ -74,7 +39,7 @@ jobs:
 
       - name: Test Report
         if: always() # Run even if tests fail
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: Test Results            # Name of the check run which will be created
           path: "**/TestResults/*.xml"    # Path to test results
@@ -82,19 +47,40 @@ jobs:
 
       - name: Build Image
         run: |-
-          TAG=$(git tag --contains $GITHUB_SHA)
-          SHORT_COMMIT=$(git rev-parse --short $GITHUB_SHA)
-          VERSION=$(git describe --tags --dirty --always)
           docker build \
-            -t registry.gitlab.com/klinki/docker-registry/pse:latest \
-            -t registry.gitlab.com/klinki/docker-registry/pse:${VERSION} \
+            -t ${IMAGE}:latest \
+            -t ${IMAGE}:${VERSION} \
             --build-arg VERZION=${VERSION} \
             --build-arg SHORT_COMMIT=${SHORT_COMMIT} \
             .
 
-      - name: Deploy
+      - name: Login to GitLab
+        if: ${{ github.ref_name == 'master' }}
+        uses: docker/login-action@v4
+        with:
+          registry: registry.gitlab.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Image
         if: ${{ github.ref_name == 'master' }}
         run: |-
-          chmod +x ./travis-deploy.sh
-          chmod +x ./deploy.sh
-          ./travis-deploy.sh
+          docker push ${IMAGE}:${VERSION}
+          docker push ${IMAGE}:latest
+
+      - name: Deploy
+        if: ${{ github.ref_name == 'master' }}
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+        run: |-
+          mkdir -p ~/.ssh
+          openssl aes-256-cbc \
+            -K "${{ secrets.encrypted_699ce602e140_key }}" \
+            -iv "${{ secrets.encrypted_699ce602e140_iv }}" \
+            -in deploy_key.enc \
+            -out ~/.ssh/deploy_key -d
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned host key of the deploy server (ssh-keyscan + compared with a trusted known_hosts)
+          echo "${DEPLOY_SERVER} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILxPKtD7R9g5eKM3M7CU9pu3pjmgjOwTRZK56OHAlJ16" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "${DEPLOY_USER}@${DEPLOY_SERVER}" 'bash -s' < deploy.sh

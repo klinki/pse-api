@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using PseApi.Configuration;
 using PseApi.Data;
 using Serilog;
@@ -32,11 +32,7 @@ namespace PseApi
             services.AddControllers();
 
             var connectionString = Configuration.GetConnectionString("Default");
-            services.AddDbContext<PseContext>(options =>
-            {
-                var serverVersion = ServerVersion.AutoDetect(connectionString);
-                options.UseMySql(connectionString, serverVersion);
-            });
+            services.AddDbContext<PseContext>(options => options.UseNpgsql(connectionString));
 
             services.AddCors(options =>
             {
@@ -47,7 +43,7 @@ namespace PseApi
                 });
             });
 
-            services.AddHealthChecks().AddMySql(connectionString);
+            services.AddHealthChecks().AddNpgSql(_ => connectionString);
 
             services.ConfigureDI(Configuration);
             services.AddQuartz(Configuration);
@@ -73,7 +69,7 @@ namespace PseApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime lifetime)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -103,8 +99,6 @@ namespace PseApi
                 endpoints.MapHealthChecks("/healthz");
                 endpoints.MapControllers();
             });
-
-            app.UseScheduler(lifetime);
 
             app.UseSwagger();
             app.UseSwaggerUI(options => 

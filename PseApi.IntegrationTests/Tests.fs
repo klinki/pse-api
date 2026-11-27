@@ -1,4 +1,4 @@
-module PseApi.IntegrationTests
+module PseApi.IntegrationTests.Tests
 open System
 open System.Collections.Generic
 open System.Net
@@ -10,7 +10,9 @@ open Hellang.Middleware.ProblemDetails
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.EntityFrameworkCore
+open Microsoft.EntityFrameworkCore.Infrastructure
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.DependencyInjection.Extensions
 open Microsoft.Extensions.Hosting
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.Logging
@@ -29,14 +31,14 @@ let configureApp (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) = 
     let env = services.BuildServiceProvider().GetService<IHostEnvironment>();
 
+    // AddDbContext composes option callbacks (EF Core 8+), so drop the app's PostgreSQL configuration first
+    services.RemoveAll<IDbContextOptionsConfiguration<PseContext>>() |> ignore
+
     services.AddDbContext<PseContext>
         (fun (options : DbContextOptionsBuilder) -> 
         match env.IsEnvironment("Test") with
         | true -> options.UseInMemoryDatabase("client_tests") |> ignore
-        | false ->
-            let connectionString = @"Data Source=(localdb)\v11.0;Initial Catalog=ContentDataDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
-            let serverVersion = ServerVersion.AutoDetect(connectionString); 
-            options.UseMySql(connectionString, serverVersion) |> ignore)
+        | false -> options.UseNpgsql("Host=localhost;Database=pse_tests") |> ignore)
     |> ignore
     services.AddCors() |> ignore
 
@@ -45,7 +47,7 @@ type CustomWebApplicationFactory<'TStartup when 'TStartup : not struct>() =
     override _this.ConfigureWebHost builder =
         builder.UseEnvironment("Test")
             // .Configure(configureApp)
-            .ConfigureServices(Action<IServiceCollection> configureServices)
+            .ConfigureTestServices(Action<IServiceCollection> configureServices)
         |> ignore
 
 let createTestServer =
@@ -122,7 +124,7 @@ type WebAppFactoryForTestingLogging<'TStartup when 'TStartup : not struct>() =
     inherit Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<'TStartup>()
     override _this.ConfigureWebHost builder =
         builder.UseEnvironment("Test")
-            .ConfigureServices(Action<IServiceCollection> configureServices)
+            .ConfigureTestServices(Action<IServiceCollection> configureServices)
             .ConfigureTestServices(Action<IServiceCollection> configureTestServices)
         |> ignore
 

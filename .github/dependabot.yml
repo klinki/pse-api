@@ -6,10 +6,6 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
   ignore:
-  - dependency-name: Pomelo.EntityFrameworkCore.MySql
-    versions:
-    - 3.2.4
-    - 3.2.5
   - dependency-name: Quartz.Serialization.Json
     versions:
     - 3.2.4
@@ -34,3 +30,11 @@ updates:
   - dependency-name: Microsoft.VisualStudio.Web.CodeGeneration.Design
     versions:
     - 5.0.1
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: weekly
+- package-ecosystem: docker
+  directory: "/"
+  schedule:
+    interval: weekly
