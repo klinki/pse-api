@@ -3,6 +3,7 @@ using PseApi.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FinSharp.PragueStockExchange;
 using Microsoft.Extensions.Logging;
@@ -42,6 +43,31 @@ namespace PseApi.Services
         {
             day = new DateTime(day.Year, day.Month, day.Day);
 
+            if (await IsDownloaded(day))
+            {
+                return await LoadTradesForDay(day);
+            }
+
+            // One download at a time: FinSharp saves the results file to a fixed temp path, so parallel
+            // downloads of the same day fail, and the second one would only find the day already stored
+            await DownloadLock.WaitAsync();
+            try
+            {
+                return await DownloadTradesForDay(day);
+            }
+            finally
+            {
+                DownloadLock.Release();
+            }
+        }
+
+        private static readonly SemaphoreSlim DownloadLock = new(1, 1);
+
+        private Task<bool> IsDownloaded(DateTime day) =>
+            _context.Datasets.AsNoTracking().AnyAsync(row => row.Day == day);
+
+        private async Task<IEnumerable<Trade>> DownloadTradesForDay(DateTime day)
+        {
             Dataset dataset = await _context.Datasets.AsNoTracking()
                 .SingleOrDefaultAsync(row => row.Day == day);
             IEnumerable<Trade> trades;
@@ -50,7 +76,16 @@ namespace PseApi.Services
             {
                 _logger.LogInformation("Data for date: {Date} not downloaded yet, downloading...", day);
 
-                var csvData = (await _pseClient.GetData(day)).ToList();
+                List<PragueStockExchangeCsvRow> csvData;
+                try
+                {
+                    csvData = (await _pseClient.GetData(day)).ToList();
+                }
+                // FinSharp's DataNotFoundException is internal; only its base class is public
+                catch (FinSharp.Api.InvestmentApiException e) when (e.GetType().Name == "DataNotFoundException")
+                {
+                    throw new TradingDataNotFoundException(day, e);
+                }
 
                 _logger.LogInformation("Downloaded: {Count} records", csvData.Count());
 
@@ -89,32 +124,38 @@ namespace PseApi.Services
                     Day = day
                 };
 
-                await using (var transaction = await _context.Database.BeginTransactionAsync())
+                try
                 {
-                    try
-                    {
-                        await _context.Trades.AddRangeAsync(trades);
-                        await _context.Datasets.AddAsync(dataset);
-                        await _context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, "Exception thrown when saving data to database");
-                        await transaction.RollbackAsync();
-                        throw;
-                    }
+                    await using var transaction = await _context.Database.BeginTransactionAsync();
+                    await _context.Trades.AddRangeAsync(trades);
+                    await _context.Datasets.AddAsync(dataset);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
                 }
-            }
-            else
-            {
-                trades = await _context.Trades
-                    .AsNoTracking()
-                    .Where(trade => trade.Date == day)
-                    .ToListAsync();
+                catch (DbUpdateException e) when (e.IsUniqueViolation())
+                {
+                    // Another request (or the nightly job) stored the same day in the meantime
+                    _logger.LogInformation("Data for date: {Date} was stored concurrently, loading it from the database", day);
+                    _context.ChangeTracker.Clear();
+                    return await LoadTradesForDay(day);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Exception thrown when saving data to database");
+                    throw;
+                }
+
+                return trades.OrderBy(trade => trade.ISIN, StringComparer.Ordinal).ToList();
             }
 
-            return trades;
+            return await LoadTradesForDay(day);
         }
+
+        private async Task<IEnumerable<Trade>> LoadTradesForDay(DateTime day) =>
+            await _context.Trades
+                .AsNoTracking()
+                .Where(trade => trade.Date == day)
+                .OrderBy(trade => trade.ISIN)
+                .ToListAsync();
     }
 }

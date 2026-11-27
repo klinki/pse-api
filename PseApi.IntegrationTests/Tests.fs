@@ -3,6 +3,7 @@ open System
 open System.Collections.Generic
 open System.Net
 open System.Net.Http
+open System.Linq
 open System.Threading.Tasks
 open Foq
 open FsUnit
@@ -140,4 +141,95 @@ let ``Test global exception handling is configured`` () = async {
     
     data.StatusCode |> should equal HttpStatusCode.InternalServerError
     Mock.Verify(<@ loggerMock.Log(any(), any(), any(), thrownExc, any()) @>, once)
+}
+
+
+(** Trade queries *)
+let private seedTrades () =
+    use scope = server.Services.CreateScope()
+    let context = scope.ServiceProvider.GetRequiredService<PseContext>()
+    if not (context.Trades.Any(fun t -> t.BIC = "BAATEST")) then
+        // Inserted out of date order on purpose
+        for (id, date) in [ (1003L, DateTime(2024, 1, 4)); (1001L, DateTime(2024, 1, 2)); (1002L, DateTime(2024, 1, 3)) ] do
+            context.Trades.Add(Trade(Id = id, BIC = "BAATEST", ISIN = "CZ0000000001", Name = "TEST", Date = date)) |> ignore
+        context.Stocks.Add(Stock(Id = 1L, BIC = "BAATEST", ISIN = "CZ0000000001", Name = "TEST")) |> ignore
+        context.SaveChanges() |> ignore
+
+let private getJson (url : string) = async {
+    use client = server.CreateClient()
+    let! data = client.GetAsync url |> Async.AwaitTask
+    let! body = data.Content.ReadAsStringAsync() |> Async.AwaitTask
+    return data.StatusCode, System.Text.Json.JsonDocument.Parse(body).RootElement
+}
+
+let private dates (json : System.Text.Json.JsonElement) =
+    [ for trade in json.EnumerateArray() -> trade.GetProperty("date").GetDateTime() ]
+
+[<Fact>]
+let ``GET api/trades without a filter should return 400`` () = async {
+    let! status, _ = getJson "api/trades"
+    status |> should equal HttpStatusCode.BadRequest
+
+    let! status, _ = getJson "api/trades?limit=5"
+    status |> should equal HttpStatusCode.BadRequest
+}
+
+[<Fact>]
+let ``GET api/trades with a limit below 1 should return 400`` () = async {
+    let! status, _ = getJson "api/trades?bic=BAATEST&limit=0"
+    status |> should equal HttpStatusCode.BadRequest
+}
+
+[<Fact>]
+let ``GET api/trades should order by date before applying the limit`` () = async {
+    seedTrades ()
+
+    let! status, json = getJson "api/trades?bic=BAATEST&limit=2"
+    status |> should equal HttpStatusCode.OK
+    dates json |> should equal [ DateTime(2024, 1, 2); DateTime(2024, 1, 3) ]
+}
+
+[<Fact>]
+let ``GET api/trades/{bic} and api/trades/isin/{isin} should return trades ordered by date`` () = async {
+    seedTrades ()
+    let expected = [ DateTime(2024, 1, 2); DateTime(2024, 1, 3); DateTime(2024, 1, 4) ]
+
+    let! status, json = getJson "api/trades/BAATEST"
+    status |> should equal HttpStatusCode.OK
+    dates json |> should equal expected
+
+    let! status, json = getJson "api/trades/isin/CZ0000000001"
+    status |> should equal HttpStatusCode.OK
+    dates json |> should equal expected
+
+    let! status, json = getJson "api/trades/isin/CZ0000000001?limit=1"
+    status |> should equal HttpStatusCode.OK
+    dates json |> should equal [ DateTime(2024, 1, 2) ]
+}
+
+let private noDataServiceMock =
+    Mock<ITradeService>()
+        .Setup(fun x -> <@ x.IsValidDate(any()) @>).Returns(Task.FromResult true)
+        .Setup(fun x -> <@ x.GetTradesForDay(any()) @>).Raises(TradingDataNotFoundException(DateTime(2026, 11, 17), null))
+        .Create()
+
+type WebAppFactoryWithoutTradingData<'TStartup when 'TStartup : not struct>() =
+    inherit Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<'TStartup>()
+    override _this.ConfigureWebHost builder =
+        builder.UseEnvironment("Test")
+            .ConfigureTestServices(Action<IServiceCollection> configureServices)
+            .ConfigureTestServices(fun services -> services.AddScoped<ITradeService>(fun _ -> noDataServiceMock) |> ignore)
+        |> ignore
+
+[<Fact>]
+let ``GET api/trades/day/{day} without data at the exchange should return 404`` () = async {
+    use server = new WebAppFactoryWithoutTradingData<Startup>()
+    use client = server.CreateClient()
+
+    let! data = client.GetAsync "api/trades/day/2026-11-17" |> Async.AwaitTask
+    let! response = data.Content.ReadAsStringAsync() |> Async.AwaitTask
+    let responseJson = PseApiDefinition.Schemas.ProblemDetails.Parse(response)
+
+    data.StatusCode |> should equal HttpStatusCode.NotFound
+    responseJson.Status.Value |> should equal 404
 }
