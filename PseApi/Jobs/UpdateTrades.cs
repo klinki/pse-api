@@ -30,7 +30,15 @@ namespace PseApi.Jobs
 
             if (await _tradeService.IsValidDate(DateTime.Today))
             {
-                await _tradeService.GetTradesForDay(DateTime.Today);
+                try
+                {
+                    await _tradeService.GetTradesForDay(DateTime.Today);
+                }
+                catch (TradingDataNotFoundException)
+                {
+                    // Exchange holiday: PSE publishes no results file for the day
+                    _logger.LogInformation("No trading data for {Date}", DateTime.Today);
+                }
             }
 
             _logger.LogInformation("Finished {Name} execution", nameof(UpdateTrades));

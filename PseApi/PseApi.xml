@@ -25,6 +25,22 @@
             <param name="services"></param>
             <param name="configuration"></param>
         </member>
+        <member name="M:PseApi.Controllers.TradesController.BuildQuery(PseApi.Queries.TradeQuery,System.Linq.Expressions.Expression{System.Func{PseApi.Data.Trade,System.Boolean}})">
+            <summary>
+            Applies the query filters, orders the trades by date (oldest first) and then applies the limit.
+            </summary>
+        </member>
+        <member name="T:PseApi.Data.DbUpdateExceptionExtensions">
+            <summary>
+            Helpers for database errors raised by <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(System.Threading.CancellationToken)"/>.
+            </summary>
+        </member>
+        <member name="M:PseApi.Data.DbUpdateExceptionExtensions.IsUniqueViolation(Microsoft.EntityFrameworkCore.DbUpdateException)">
+            <summary>
+            True when the save failed on a unique index or primary key, e.g. because a concurrent
+            request inserted the same row first.
+            </summary>
+        </member>
         <member name="F:PseApi.Data.PseContext.CaseInsensitiveCollation">
             <summary>
             Case-insensitive ICU collation used for stock identifiers (BIC, ISIN), so lookups behave
@@ -50,6 +66,28 @@
         </member>
         <member name="M:PseApi.Migrations._20261127095647_InitialPostgreSql.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
+        </member>
+        <member name="P:PseApi.Queries.TradeQuery.Limit">
+            <summary>
+            Maximum number of trades to return, the oldest first.
+            </summary>
+        </member>
+        <member name="M:PseApi.Queries.TradeQuery.HasFilter">
+            <summary>
+            True when at least one filter narrows the result down (limit alone does not count).
+            </summary>
+        </member>
+        <member name="M:PseApi.Services.StockService.EnsureStockForIsinAsync(System.String)">
+            <summary>
+            Makes sure a stock with the given ISIN is known, creating it from its trades if needed.
+            </summary>
+            <returns>False when neither a stock nor any trade with that ISIN exists.</returns>
+        </member>
+        <member name="T:PseApi.Services.TradingDataNotFoundException">
+            <summary>
+            The exchange publishes no trading data for the requested day: an exchange holiday, a day whose
+            results are not published yet, or a day older than the exchange's archive.
+            </summary>
         </member>
     </members>
 </doc>
